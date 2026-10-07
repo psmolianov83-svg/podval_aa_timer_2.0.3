@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "short_name": "AA Timer",
+  "name": "Action Air Club Timer",
+  "icons": [
+    { "src": "./icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#121212",
+  "theme_color": "#ffcc00",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "portrait"
+}

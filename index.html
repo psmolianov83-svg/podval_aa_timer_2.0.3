@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ffcc00">
+    <title>ПОДВАЛ IPSC</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="app-title">ПОДВАЛ IPSC</h1>
+
+    <div class="tabs">
+        <button id="tabCalc" class="tab-btn active" onclick="window.switchTab('calc')">Кальк</button>
+        <button id="tabHistory" class="tab-btn" onclick="window.switchTab('history')">Лог</button>
+        <button id="tabMatch" class="tab-btn" onclick="window.switchTab('match')">Матч</button>
+        <button id="tabArchive" class="tab-btn" onclick="window.switchTab('archive')">Архив</button>
+        <button id="tabSettings" class="tab-btn" onclick="window.switchTab('settings')">Настройки</button>
+    </div>
+
+    <!-- ЭКРАН 1: КАЛЬКУЛЯТОР -->
+    <div id="calcScreen" class="screen active">
+        <div id="basementBanner" class="ipsc-basement">
+            <div><span id="statusText" class="status-text">ЧИСТЫЙ РАСЧЕТ</span></div>
+            <label class="dnf-checkbox"><input type="checkbox" id="dnfCheck" onchange="window.calculateHF()"> DNF</label>
+        </div>
+        <div class="row-grid">
+            <div class="input-block"><label>Упражнение:</label><select id="stageSelect" class="input-style" onchange="window.onStageChange()"></select></div>
+            <div class="input-block"><label>Макс. очки:</label><input type="number" id="maxPoints" class="input-style" value="60" readonly style="opacity: 0.6;"></div>
+        </div>
+        <div class="input-block"><label>Стрелок:</label><select id="shooterSelect" class="input-style" onchange="window.updateSignatureInfo()"></select></div>
+        <button onclick="window.showShootingOrder()" class="btn-order">📋 Очередность стрелков</button>
+        <div class="counter-row highlight-green">
+            <span class="counter-label" style="color: #55ff55;">Альфа (A) - Авто</span>
+            <div class="counter-controls"><span class="counter-value" id="alpha" style="color: #55ff55; width: auto;">12</span></div>
+        </div>
+        <div class="counter-row">
+            <span class="counter-label">Чарли (C)</span>
+            <div class="counter-controls">
+                <button class="btn-calc btn-minus" onclick="window.changeVal('charlie', -1)">−</button>
+                <span class="counter-value" id="charlie">0</span>
+                <button class="btn-calc btn-plus" onclick="window.changeVal('charlie', 1)">+</button>
+            </div>
+        </div>
+        <div class="counter-row">
+            <span class="counter-label">Дельта (D)</span>
+            <div class="counter-controls">
+                <button class="btn-calc btn-minus" onclick="window.changeVal('delta', -1)">−</button>
+                <span class="counter-value" id="delta">0</span>
+                <button class="btn-calc btn-plus" onclick="window.changeVal('delta', 1)">+</button>
+            </div>
+        </div>
+        <div class="row-grid">
+            <div class="counter-row"><span class="counter-label" style="color:#ff5555;">MISS</span><div class="counter-controls"><button class="btn-calc btn-minus" onclick="window.changeVal('miss', -1)">−</button><span class="counter-value" id="miss">0</span><button class="btn-calc btn-plus penalty" onclick="window.changeVal('miss', 1)">+</button></div></div>
+            <div class="counter-row"><span class="counter-label" style="color:#ff5555;">NS</span><div class="counter-controls"><button class="btn-calc btn-minus" onclick="window.changeVal('noshoot', -1)">−</button><span class="counter-value" id="noshoot">0</span><button class="btn-calc btn-plus penalty" onclick="window.changeVal('noshoot', 1)">+</button></div></div>
+        </div>
+        <div class="counter-row">
+            <span class="counter-label" style="color:#ff5555;">Процедура</span>
+            <div class="counter-controls">
+                <button class="btn-calc btn-minus" onclick="window.changeVal('procedural', -1)">−</button>
+                <span class="counter-value" id="procedural">0</span>
+                <button class="btn-calc btn-plus penalty" onclick="window.changeVal('procedural', 1)">+</button>
+            </div>
+        </div>
+        <div class="input-block">
+            <label>Время упражнения (сек):</label>
+            <input type="text" id="time" class="input-style" inputmode="decimal"
+                   style="text-align: center; font-size: 20px; padding: 3px;"
+                   placeholder="0.00"
+                   oninput="window.calculateHF()"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+        </div>
+        <div class="signature-block">
+            <label>Подпись стрелка:</label>
+            <div id="signaturePreview" class="signature-preview" onclick="window.openSignatureModal()">
+                <span id="signaturePreviewText">Нажмите, чтобы поставить подпись</span>
+                <img id="signaturePreviewImg" style="display:none;" alt="подпись">
+            </div>
+        </div>
+        <div class="result-box">
+            <div class="hf-title">ХИТ-ФАКТОР</div>
+            <div class="hf-value" id="hitFactor">0.0000</div>
+            <div class="hf-sub" id="totalPoints">Очки: 0 | Штрафы: 0</div>
+        </div>
+        <button class="btn-save" onclick="window.saveToHistory()">Сохранить результат</button>
+    </div>
+
+    <!-- ЭКРАН 2: ЛОГ -->
+    <div id="historyScreen" class="screen">
+        <h3 class="section-title">Хронология записей (Лог)</h3>
+
+        <div class="log-filters">
+            <select id="logFilterShooter" class="input-style filter-select" onchange="window.renderHistory()">
+                <option value="">Все стрелки</option>
+            </select>
+            <select id="logFilterClass" class="input-style filter-select" onchange="window.renderHistory()">
+                <option value="">Все классы</option>
+                <option value="Production">Production</option>
+                <option value="Standard">Standard</option>
+                <option value="Open">Open</option>
+                <option value="Classic">Classic</option>
+                <option value="PCC">PCC</option>
+            </select>
+            <select id="logFilterStage" class="input-style filter-select" onchange="window.renderHistory()">
+                <option value="">Все упражнения</option>
+            </select>
+            <button onclick="window.resetLogFilters()" class="log-filter-reset" title="Сбросить фильтры">✕</button>
+        </div>
+
+        <div class="history-container" id="historyList"></div>
+        <div class="btn-row">
+            <button class="btn-clear" onclick="window.clearHistory()" style="flex:1;">Очистить лог</button>
+            <button class="btn-qr-send" onclick="window.openQRTransfer()" style="flex:1;">📤 Передать (QR)</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 3: МАТЧ -->
+    <div id="matchScreen" class="screen">
+        <div class="match-filter-row">
+            <h3 class="section-title" style="margin:0;">Зачет класса:</h3>
+            <select id="matchClassFilter" class="input-style" style="padding: 4px;" onchange="window.renderMatchResults()">
+                <option value="Overall">Общий зачет</option>
+                <option value="Production">Production</option>
+                <option value="Standard">Standard</option>
+                <option value="Open">Open</option>
+                <option value="Classic">Classic</option>
+                <option value="PCC">PCC</option>
+            </select>
+        </div>
+        <div class="history-container" id="matchLeaderboard"></div>
+        <div class="btn-row">
+            <input type="text" id="archiveMatchName" class="input-style" placeholder="Название матча" value="Клубный матч">
+            <button class="btn-archive" onclick="window.archiveCurrentMatch()">В архив</button>
+            <button class="btn-excel" onclick="window.exportMatchToExcel()">Excel</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 4: АРХИВ -->
+    <div id="archiveScreen" class="screen">
+        <h3 class="section-title">Архив прошедших матчей</h3>
+        <div class="history-container" id="archiveList"></div>
+    </div>
+
+    <!-- ЭКРАН 5: НАСТРОЙКИ -->
+    <div id="settingsScreen" class="screen">
+        <h3 class="section-title">Управление списками</h3>
+        <div class="history-container settings-scroll">
+            <div class="settings-card">
+                <label class="settings-label">ID матча (единый для всех судей):</label>
+                <div class="settings-id-row">
+                    <span id="currentMatchId" class="settings-id-value">—</span>
+                    <button onclick="window.changeMatchId()" class="settings-mini-btn">Изменить</button>
+                </div>
+                <div class="settings-hint">Ваш ID устройства: <span id="currentDeviceId" style="color:#aaa;"></span></div>
+            </div>
+
+            <div class="settings-card">
+                <label class="settings-label">Добавить стрелка:</label>
+                <div class="settings-grid-shooter">
+                    <input type="text" id="newShooterName" class="input-style" placeholder="ФИО стрелка">
+                    <select id="newShooterClass" class="input-style">
+                        <option value="Production">Production</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Open">Open</option>
+                        <option value="Classic">Classic</option>
+                        <option value="PCC">PCC</option>
+                    </select>
+                    <button onclick="window.addShooter()" class="settings-add-btn">+</button>
+                </div>
+                <div id="settingsShootersList" class="settings-list"></div>
+            </div>
+
+            <div class="settings-card">
+                <label class="settings-label">Добавить упражнение:</label>
+                <div class="settings-grid-stage">
+                    <input type="text" id="newStageName" class="input-style" placeholder="Название">
+                    <input type="number" id="newStagePoints" class="input-style" inputmode="numeric" placeholder="Очки" value="60">
+                    <button onclick="window.addStage()" class="settings-add-btn">+</button>
+                </div>
+                <div id="settingsStagesList" class="settings-list"></div>
+            </div>
+
+            <div class="settings-card">
+                <label class="settings-label">📥 Приём результатов</label>
+                <button onclick="window.openQRScanner()" class="btn-qr-receive">Принять результаты (Сканировать QR)</button>
+                <div id="scanLog" class="scan-log"></div>
+            </div>
+        </div>
+        <button class="btn-clear btn-reset" onclick="window.resetToDefaultSettings()">Сбросить списки</button>
+    </div>
+</div>
+
+<!-- МОДАЛКА QR-ПЕРЕДАЧИ -->
+<div id="qrModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title" id="qrTitle">Пакет 1 из 1</div>
+    <div class="qr-frame">
+        <canvas id="qrCanvas"></canvas>
+    </div>
+    <div class="modal-info" id="qrInfo">Сканируйте по порядку</div>
+    <div class="modal-nav">
+        <button onclick="window.qrPrevPart()" class="modal-btn-secondary">← Назад</button>
+        <button onclick="window.qrNextPart()" class="modal-btn-primary">Вперёд →</button>
+    </div>
+    <button onclick="window.closeQRTransfer()" class="modal-btn-close">Закрыть</button>
+</div>
+
+<!-- МОДАЛКА СКАНЕРА -->
+<div id="scanModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title">Сканирование QR</div>
+    <div class="scan-video-wrap">
+        <video id="scanVideo" class="scan-video" playsinline></video>
+        <div class="scan-reticle"></div>
+    </div>
+    <div class="modal-info" id="scanStatus">Наведите камеру на QR-код...</div>
+    <div id="scanProgress" class="scan-progress"></div>
+    <button onclick="window.closeQRScanner()" class="modal-btn-close">Остановить</button>
+</div>
+
+<!-- МОДАЛКА РЕДАКТИРОВАНИЯ СТРЕЛКА -->
+<div id="editShooterModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title">Редактирование стрелка</div>
+    <div style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:10px;">
+        <div class="input-block">
+            <label>ФИО стрелка:</label>
+            <input type="text" id="editShooterName" class="input-style" placeholder="ФИО">
+        </div>
+        <div class="input-block">
+            <label>Класс:</label>
+            <select id="editShooterClass" class="input-style">
+                <option value="Production">Production</option>
+                <option value="Standard">Standard</option>
+                <option value="Open">Open</option>
+                <option value="Classic">Classic</option>
+                <option value="PCC">PCC</option>
+            </select>
+        </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+        <button onclick="window.closeEditShooter()" class="modal-btn-secondary">Отмена</button>
+        <button onclick="window.saveEditShooter()" class="modal-btn-primary">Сохранить</button>
+    </div>
+</div>
+
+<!-- МОДАЛКА ОЧЕРЕДНОСТИ СТРЕЛКОВ -->
+<div id="orderModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title" id="orderTitle">Очередность стрелков</div>
+    <div id="orderList" style="width:100%; max-width:400px; max-height:70vh; overflow-y:auto; padding:4px; box-sizing:border-box;"></div>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+        <button onclick="window.resetStageShift()" class="modal-btn-secondary" style="border:1px solid #ff5555; color:#ff5555; background:none;">Сбросить сдвиг</button>
+        <button onclick="window.closeOrderModal()" class="modal-btn-primary">Закрыть</button>
+    </div>
+</div>
+
+<!-- МОДАЛКА ПОДПИСИ -->
+<div id="signatureModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title">Подпись стрелка</div>
+    <div id="signatureModalInfo" class="signature-modal-info"></div>
+    <div class="modal-info" style="margin-bottom:8px;">Распишитесь пальцем или стилусом</div>
+
+    <div class="signature-canvas-wrap">
+        <canvas id="signatureCanvas"></canvas>
+        <div class="signature-baseline">подпись</div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:14px;">
+        <button onclick="window.clearSignatureCanvas()" class="modal-btn-secondary">Очистить</button>
+        <button onclick="window.saveSignature()" class="modal-btn-primary">Готово</button>
+    </div>
+    <button onclick="window.closeSignatureModal()" class="modal-btn-close">Отмена</button>
+</div>
+
+<!-- МОДАЛКА ПРОСМОТРА ПОДПИСИ -->
+<div id="signatureViewModal" class="modal-overlay" style="display:none;">
+    <div class="modal-title">Подпись стрелка</div>
+    <div class="signature-view-frame">
+        <img id="signatureViewImg" src="" alt="подпись">
+    </div>
+    <div id="signatureViewDetails" class="signature-view-details"></div>
+    <button onclick="window.closeSignatureView()" class="modal-btn-close">Закрыть</button>
+</div>
+
+<script src="qrcode.min.js"></script>
+<script src="jsqr.min.js"></script>
+<script src="aap.js"></script>
+</body>
+</html>
